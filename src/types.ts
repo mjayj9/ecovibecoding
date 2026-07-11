@@ -8,3 +8,18 @@ export interface PledgeStatus {
   rule4: boolean;
   name: string;
 }
+
+export interface Location {
+  lat: number;
+  lng: number;
+}
+
+export interface Report {
+  id?: string;
+  userId: string;
+  userName: string;
+  location: Location;
+  description: string;
+  timestamp: number;
+  status: 'pending' | 'verified' | 'rejected';
+}

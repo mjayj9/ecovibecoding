@@ -1,10 +1,15 @@
 import { useState, useRef, useEffect, ReactNode } from 'react';
 import { UserMode } from '../../types';
 import { motion, AnimatePresence } from 'motion/react';
-import { MapPin, Camera, AlertOctagon, Scan, ShieldAlert, Fingerprint, Map as MapIcon, Lock, Users } from 'lucide-react';
+import { MapPin, Camera, AlertOctagon, Scan, ShieldAlert, Fingerprint, Map as MapIcon, Lock, Users, CheckCircle2 } from 'lucide-react';
+import { ReportModal } from '../ReportModal';
+import { useUser } from '../../hooks/useUser';
 
 export function MapTab({ mode }: { mode: UserMode }) {
+  const { userData, updateUserData } = useUser();
   const [reportState, setReportState] = useState<'idle' | 'analyzing' | 'verifying' | 'securing' | 'done' | 'error'>('idle');
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [showRewardToast, setShowRewardToast] = useState(false);
   const timeoutRefs = useRef<NodeJS.Timeout[]>([]);
 
   useEffect(() => {
@@ -30,9 +35,21 @@ export function MapTab({ mode }: { mode: UserMode }) {
     addTimeout(() => setReportState('error'), 1500);
   }
 
+  const handleReward = async () => {
+    if (!userData) return;
+    const newExp = Math.min(100, userData.exp + 15);
+    await updateUserData({ exp: newExp });
+    setShowRewardToast(true);
+    setReportState('idle');
+    
+    addTimeout(() => {
+      setShowRewardToast(false);
+    }, 3000);
+  };
+
   if (mode === 'general') {
     return (
-      <div className="p-4 space-y-4 animate-in fade-in duration-500 flex flex-col h-full">
+      <div className="p-4 space-y-4 animate-in fade-in duration-500 flex flex-col h-full relative">
         <div className="bg-gray-200 rounded-2xl h-64 relative overflow-hidden flex flex-col items-center justify-center text-gray-500 border-2 border-dashed border-gray-300">
           <MapIcon className="w-12 h-12 mb-2 text-gray-400" />
           <p className="text-sm font-medium">생태 탐험 지도</p>
@@ -47,17 +64,38 @@ export function MapTab({ mode }: { mode: UserMode }) {
           </div>
         </div>
 
-        <button className="w-full bg-[#2D6A4F] text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform">
+        <button 
+          onClick={() => setShowReportModal(true)}
+          className="w-full bg-[#2D6A4F] text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform"
+        >
           <Camera className="w-5 h-5" />
           주변 생물 제보하기
         </button>
+
+        {showReportModal && (
+          <ReportModal onClose={() => setShowReportModal(false)} />
+        )}
       </div>
     );
   }
 
   // Scientist Mode
   return (
-    <div className="p-4 space-y-4 animate-in fade-in duration-500 flex flex-col min-h-full">
+    <div className="p-4 space-y-4 animate-in fade-in duration-500 flex flex-col min-h-full relative">
+      <AnimatePresence>
+        {showRewardToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="absolute top-8 left-1/2 -translate-x-1/2 z-50 bg-green-500 text-white px-4 py-2 rounded-full font-bold shadow-lg flex items-center gap-2 text-sm whitespace-nowrap"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            +15 EXP 획득!
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="bg-[#0f172a] rounded-2xl p-5 text-green-400 shadow-xl border border-slate-800 font-mono relative overflow-hidden">
         <div className="absolute top-2 right-2 flex gap-1">
           <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
@@ -151,7 +189,7 @@ export function MapTab({ mode }: { mode: UserMode }) {
           <motion.button
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            onClick={() => setReportState('idle')}
+            onClick={handleReward}
             className="w-full mt-4 bg-green-500 text-slate-900 font-bold py-3 rounded-lg text-sm"
           >
             데이터 정제 기여 (자원봉사 크레딧 부여)
