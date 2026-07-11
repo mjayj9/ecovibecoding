@@ -1,23 +1,33 @@
-import { useState, ReactNode } from 'react';
+import { useState, useRef, useEffect, ReactNode } from 'react';
 import { UserMode } from '../../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { MapPin, Camera, AlertOctagon, Scan, ShieldAlert, Fingerprint, Map as MapIcon, Lock, Users } from 'lucide-react';
 
 export function MapTab({ mode }: { mode: UserMode }) {
   const [reportState, setReportState] = useState<'idle' | 'analyzing' | 'verifying' | 'securing' | 'done' | 'error'>('idle');
+  const timeoutRefs = useRef<NodeJS.Timeout[]>([]);
+
+  useEffect(() => {
+    return () => {
+      timeoutRefs.current.forEach(clearTimeout);
+    };
+  }, []);
+
+  const addTimeout = (callback: () => void, delay: number) => {
+    const id = setTimeout(callback, delay);
+    timeoutRefs.current.push(id);
+  };
 
   const startReport = () => {
-    // Simulate fake EXIF error for demonstration if desired, but let's do the success flow first, 
-    // or maybe conditionally show error. Let's do 50/50 or just the success flow with a separate button for error.
     setReportState('analyzing');
-    setTimeout(() => setReportState('verifying'), 2500);
-    setTimeout(() => setReportState('securing'), 5000);
-    setTimeout(() => setReportState('done'), 7500);
+    addTimeout(() => setReportState('verifying'), 2500);
+    addTimeout(() => setReportState('securing'), 5000);
+    addTimeout(() => setReportState('done'), 7500);
   };
 
   const startErrorFlow = () => {
     setReportState('analyzing');
-    setTimeout(() => setReportState('error'), 1500);
+    addTimeout(() => setReportState('error'), 1500);
   }
 
   if (mode === 'general') {

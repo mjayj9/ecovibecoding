@@ -1,9 +1,10 @@
-import { useState } from 'react';
 import { UserMode } from '../../types';
 import { User, signOut } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
 import { CheckSquare, LogOut, Award, ShieldCheck, Leaf } from 'lucide-react';
 import { CertificateModal } from '../CertificateModal';
+import { useUser } from '../../hooks/useUser';
+import { useState, useEffect } from 'react';
 
 const PLEDGES = [
   "위치 데이터를 고의로 조작하거나 위조하지 않겠습니다.",
@@ -13,14 +14,20 @@ const PLEDGES = [
 ];
 
 export function MyTab({ mode, user }: { mode: UserMode, user: User }) {
-  const [name, setName] = useState(user.displayName || '');
-  const [checkedRules, setCheckedRules] = useState<boolean[]>([false, false, false, false]);
+  const { userData, updateUserData } = useUser();
   const [showCertificate, setShowCertificate] = useState(false);
+
+  const name = userData?.name ?? user.displayName ?? '';
+  const checkedRules = userData?.pledges ?? [false, false, false, false];
+
+  const handleNameChange = (newName: string) => {
+    updateUserData({ name: newName });
+  };
 
   const toggleRule = (index: number) => {
     const newRules = [...checkedRules];
     newRules[index] = !newRules[index];
-    setCheckedRules(newRules);
+    updateUserData({ pledges: newRules });
   };
 
   const allChecked = checkedRules.every(Boolean) && name.trim().length > 0;
@@ -65,7 +72,7 @@ export function MyTab({ mode, user }: { mode: UserMode, user: User }) {
               type="text" 
               placeholder="본명을 입력하세요"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => handleNameChange(e.target.value)}
               className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2D6A4F] focus:border-transparent transition-all"
             />
           </div>

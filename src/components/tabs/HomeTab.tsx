@@ -1,19 +1,27 @@
-import { useState } from 'react';
 import { UserMode } from '../../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { Shield, CheckCircle2, XCircle, ChevronRight, Activity, Users, AlertTriangle } from 'lucide-react';
+import { useUser } from '../../hooks/useUser';
 
 export function HomeTab({ mode }: { mode: UserMode }) {
-  const [exp, setExp] = useState(20);
-  const [quizAnswered, setQuizAnswered] = useState<boolean | null>(null);
+  const { userData, updateUserData } = useUser();
 
-  const handleQuizAnswer = (correct: boolean) => {
-    if (quizAnswered !== null) return;
-    setQuizAnswered(correct);
+  const handleQuizAnswer = async (correct: boolean) => {
+    if (!userData || userData.quizAnswered !== null) return;
+    
+    let newExp = userData.exp;
     if (correct) {
-      setExp(Math.min(100, exp + 30));
+      newExp = Math.min(100, userData.exp + 30);
     }
+    
+    await updateUserData({
+      quizAnswered: correct,
+      exp: newExp
+    });
   };
+
+  const exp = userData?.exp ?? 20;
+  const quizAnswered = userData?.quizAnswered ?? null;
 
   if (mode === 'scientist') {
     return (

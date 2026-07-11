@@ -35,11 +35,16 @@ export function NewsTab() {
   useEffect(() => {
     const fetchNews = async () => {
       try {
-        const response = await fetch('https://newsapi.org/v2/everything?q=생태+OR+환경&language=ko&apiKey=b4d05b6f7414470685f36c9641c4ea6a');
-        if (!response.ok) throw new Error('API limit reached or blocked');
+        const response = await fetch('/api/news');
+        if (!response.ok) throw new Error('Failed to fetch from backend api');
         const data = await response.json();
+        
+        if (data.fallback) {
+          setIsFallback(true);
+        }
+
         if (data.articles && data.articles.length > 0) {
-          setNews(data.articles.slice(0, 5));
+          setNews(data.articles);
         } else {
           throw new Error('No articles found');
         }

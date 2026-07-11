@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { UserMode, Tab } from './types';
 import { HomeTab } from './components/tabs/HomeTab';
 import { MapTab } from './components/tabs/MapTab';
@@ -11,22 +11,14 @@ import { NewsTab } from './components/tabs/NewsTab';
 import { MyTab } from './components/tabs/MyTab';
 import { BottomNav } from './components/BottomNav';
 import { TopBar } from './components/TopBar';
+import { UserProvider, useUser } from './hooks/useUser';
 import { auth } from './lib/firebase';
-import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, User } from 'firebase/auth';
+import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 
-export default function App() {
+function MainApp() {
   const [mode, setMode] = useState<UserMode>('general');
   const [activeTab, setActiveTab] = useState<Tab>('home');
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
+  const { user, loading } = useUser();
 
   const handleLogin = async () => {
     try {
@@ -73,6 +65,14 @@ export default function App() {
 
       <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <UserProvider>
+      <MainApp />
+    </UserProvider>
   );
 }
 
