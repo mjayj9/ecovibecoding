@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, ReactNode } from 'react';
 import { UserMode } from '../../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { MapPin, Camera, AlertOctagon, Scan, ShieldAlert, Fingerprint, Map as MapIcon, Lock, Users } from 'lucide-react';
@@ -152,7 +152,7 @@ export function MapTab({ mode }: { mode: UserMode }) {
   );
 }
 
-function Step({ active, completed, icon, title, desc }: { active: boolean, completed: boolean, icon: any, title: string, desc: string }) {
+function Step({ active, completed, icon, title, desc }: { active: boolean, completed: boolean, icon: ReactNode, title: string, desc: string }) {
   if (!active) return null;
   return (
     <motion.div 

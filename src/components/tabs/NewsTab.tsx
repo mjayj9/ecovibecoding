@@ -20,8 +20,15 @@ const FALLBACK_NEWS = [
   }
 ];
 
+interface NewsItem {
+  title: string;
+  source: string | { name: string };
+  date?: string;
+  publishedAt?: string;
+}
+
 export function NewsTab() {
-  const [news, setNews] = useState<any[]>([]);
+  const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFallback, setIsFallback] = useState(false);
 
