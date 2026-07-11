@@ -12,6 +12,7 @@ interface ReportModalProps {
 
 export function ReportModal({ onClose }: ReportModalProps) {
   const { user, userData } = useUser();
+  const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState<Location | null>(null);
   const [loadingLocation, setLoadingLocation] = useState(true);
@@ -45,16 +46,17 @@ export function ReportModal({ onClose }: ReportModalProps) {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!user || !location || !description.trim()) return;
+    if (!user || !location || !title.trim() || !description.trim()) return;
 
     setSubmitting(true);
     try {
       await addDoc(collection(db, 'reports'), {
         userId: user.uid,
         userName: userData?.name || user.displayName || '익명 대원',
+        title,
         location,
         description,
-        timestamp: Date.now(),
+        createdAt: Date.now(),
         status: 'pending'
       });
       setSuccess(true);
@@ -117,12 +119,36 @@ export function ReportModal({ onClose }: ReportModalProps) {
                       위치 확인 중...
                     </div>
                   ) : locationError ? (
-                    <div className="text-xs text-red-500">{locationError}</div>
+                    <div className="space-y-2">
+                      <div className="text-xs text-red-500">{locationError}</div>
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          setLocation({ lat: 37.5665, lng: 126.9780 });
+                          setLocationError(null);
+                        }}
+                        className="text-[10px] bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1.5 rounded-lg transition-colors font-bold"
+                      >
+                        가상 위치로 테스트하기 (서울)
+                      </button>
+                    </div>
                   ) : location ? (
                     <div className="text-xs text-gray-600 font-mono">
                       {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
                     </div>
                   ) : null}
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500">생물명</label>
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="예: 수달, 청둥오리 등"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2D6A4F] focus:border-transparent transition-all"
+                    required
+                  />
                 </div>
 
                 <div className="space-y-1">
@@ -138,7 +164,7 @@ export function ReportModal({ onClose }: ReportModalProps) {
 
                 <button
                   type="submit"
-                  disabled={submitting || loadingLocation || !location || !description.trim()}
+                  disabled={submitting || loadingLocation || !location || !title.trim() || !description.trim()}
                   className="w-full bg-[#2D6A4F] text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : '제보하기'}

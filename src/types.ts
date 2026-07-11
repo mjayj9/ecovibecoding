@@ -18,8 +18,9 @@ export interface Report {
   id?: string;
   userId: string;
   userName: string;
+  title: string;
   location: Location;
   description: string;
-  timestamp: number;
+  createdAt: number;
   status: 'pending' | 'verified' | 'rejected';
 }
