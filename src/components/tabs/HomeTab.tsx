@@ -5,6 +5,7 @@ import { useUser } from '../../hooks/useUser';
 import { useState, useEffect } from 'react';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
+import toast from 'react-hot-toast';
 
 export function HomeTab({ mode }: { mode: UserMode }) {
   const { userData, updateUserData } = useUser();
@@ -26,14 +27,29 @@ export function HomeTab({ mode }: { mode: UserMode }) {
     if (!userData || userData.quizAnswered !== null) return;
     
     let newExp = userData.exp;
+    let newLevel = userData.level ?? 1;
+    
     if (correct) {
-      newExp = Math.min(100, userData.exp + 30);
+      newExp += 30;
+      if (newExp >= 100) {
+        newLevel += Math.floor(newExp / 100);
+        newExp = newExp % 100;
+      }
     }
     
-    await updateUserData({
-      quizAnswered: correct,
-      exp: newExp
-    });
+    try {
+      await updateUserData({
+        quizAnswered: correct,
+        exp: newExp,
+        level: newLevel
+      });
+      if (correct) {
+        toast.success("정답입니다! +30 EXP 획득");
+      }
+    } catch (error) {
+      console.error("Quiz answer update failed:", error);
+      toast.error("결과를 저장하는 중 오류가 발생했습니다.");
+    }
   };
 
   const exp = userData?.exp ?? 20;
@@ -102,7 +118,7 @@ export function HomeTab({ mode }: { mode: UserMode }) {
         <div className="flex justify-between items-end mb-3">
           <div>
             <div className="text-xs font-bold text-[#2D6A4F] bg-[#2D6A4F]/10 px-2 py-1 rounded-md inline-block mb-1">
-              Lv.1 일반대원
+              Lv.{userData?.level ?? 1} 일반대원
             </div>
             <h2 className="text-xl font-bold text-gray-900">생태 탐험가</h2>
           </div>

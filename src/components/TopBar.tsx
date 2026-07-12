@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ShieldAlert, ShieldCheck, HelpCircle, X, Camera, Shield, Star } from 'lucide-react';
+import { ShieldAlert, ShieldCheck, HelpCircle, X, Camera, Shield, Star, Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useUser } from '../hooks/useUser';
 
@@ -73,7 +73,7 @@ function HelpModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-export function TopBar() {
+export function TopBar({ onOpenSidebar }: { onOpenSidebar?: () => void }) {
   const { userData } = useUser();
   const [showHelp, setShowHelp] = useState(false);
   const role = userData?.role || 'general';
@@ -82,6 +82,15 @@ export function TopBar() {
     <>
       <div className="bg-white px-4 py-3 shadow-sm z-10 flex items-center justify-between sticky top-0">
         <div className="flex items-center gap-2">
+          {onOpenSidebar && (
+            <button 
+              onClick={onOpenSidebar}
+              className="p-1.5 text-gray-500 hover:text-gray-900 rounded-full transition-colors active:scale-95 -ml-1 mr-1"
+              aria-label="메뉴 열기"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+          )}
           <div className="flex bg-gray-100 px-3 py-1.5 rounded-full items-center">
             <span className={`text-[12px] font-bold ${role === 'general' ? 'text-[#2D6A4F]' : 'text-[#1A365D]'}`}>
               {role === 'general' ? '🌱 일반 대원' : '🔬 시민 과학자'}

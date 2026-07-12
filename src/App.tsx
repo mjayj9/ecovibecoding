@@ -11,6 +11,7 @@ import { NewsTab } from './components/tabs/NewsTab';
 import { MyTab } from './components/tabs/MyTab';
 import { BottomNav } from './components/BottomNav';
 import { TopBar } from './components/TopBar';
+import { Sidebar } from './components/Sidebar';
 import { UserProvider, useUser } from './hooks/useUser';
 import { auth } from './lib/firebase';
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
@@ -78,6 +79,7 @@ function RoleSelectionScreen() {
 
 function MainApp() {
   const [activeTab, setActiveTab] = useState<Tab>('home');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user, userData, loading } = useUser();
 
   const handleLogin = async () => {
@@ -124,7 +126,7 @@ function MainApp() {
 
   return (
     <div className="mx-auto w-full max-w-[430px] min-h-screen h-screen overflow-hidden bg-[#F3F4F6] flex flex-col relative shadow-2xl sm:border sm:border-gray-200">
-      <TopBar />
+      <TopBar onOpenSidebar={() => setIsSidebarOpen(true)} />
       
       <main className="flex-1 overflow-y-auto pb-20 relative">
         {activeTab === 'home' && <HomeTab mode={mode} />}
@@ -134,6 +136,12 @@ function MainApp() {
       </main>
 
       <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
+      
+      <Sidebar 
+        isOpen={isSidebarOpen} 
+        onClose={() => setIsSidebarOpen(false)} 
+        setActiveTab={setActiveTab}
+      />
     </div>
   );
 }

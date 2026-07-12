@@ -4,6 +4,7 @@ import { auth, db } from '../lib/firebase';
 import { User, onAuthStateChanged } from 'firebase/auth';
 
 export interface UserData {
+  level: number;
   exp: number;
   quizAnswered: boolean | null;
   pledges: boolean[];
@@ -13,6 +14,7 @@ export interface UserData {
 }
 
 const defaultUserData: UserData = {
+  level: 1,
   exp: 20,
   quizAnswered: null,
   pledges: [false, false, false, false],
