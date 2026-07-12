@@ -125,24 +125,28 @@ function MainApp() {
   const mode = userData?.role || 'general';
 
   return (
-    <div className="mx-auto w-full max-w-[430px] min-h-screen h-screen overflow-hidden bg-[#F3F4F6] flex flex-col relative shadow-2xl sm:border sm:border-gray-200">
-      <TopBar onOpenSidebar={() => setIsSidebarOpen(true)} />
-      
-      <main className="flex-1 overflow-y-auto pb-20 relative">
-        {activeTab === 'home' && <HomeTab mode={mode} />}
-        {activeTab === 'map' && <MapTab mode={mode} />}
-        {activeTab === 'news' && <NewsTab />}
-        {activeTab === 'my' && <MyTab mode={mode} user={user} />}
-      </main>
+    <>
+      <div className="mx-auto w-full max-w-[430px] min-h-screen h-screen overflow-hidden bg-[#F3F4F6] flex flex-col relative shadow-2xl sm:border sm:border-gray-200">
+        <TopBar onOpenSidebar={() => setIsSidebarOpen(true)} />
+        
+        <main className="flex-1 overflow-y-auto pb-20 relative">
+          {activeTab === 'home' && <HomeTab mode={mode} />}
+          {activeTab === 'map' && <MapTab mode={mode} />}
+          {activeTab === 'news' && <NewsTab />}
+          {activeTab === 'my' && <MyTab mode={mode} user={user} />}
+        </main>
 
-      <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
+        <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
+      </div>
       
       <Sidebar 
         isOpen={isSidebarOpen} 
         onClose={() => setIsSidebarOpen(false)} 
+        activeTab={activeTab}
         setActiveTab={setActiveTab}
+        userData={userData}
       />
-    </div>
+    </>
   );
 }
 
