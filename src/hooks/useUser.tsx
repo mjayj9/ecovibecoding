@@ -8,7 +8,7 @@ export interface UserData {
   quizAnswered: boolean | null;
   pledges: boolean[];
   name: string;
-  role?: 'general' | 'scientist';
+  role: 'general' | 'scientist' | null;
   hasSeenTutorial?: boolean;
 }
 
@@ -16,7 +16,8 @@ const defaultUserData: UserData = {
   exp: 20,
   quizAnswered: null,
   pledges: [false, false, false, false],
-  name: ''
+  name: '',
+  role: null
 };
 
 interface UserContextType {

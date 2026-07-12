@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { UserMode, Report } from '../../types';
 import { motion, AnimatePresence } from 'motion/react';
-import { Camera, AlertOctagon, Scan, ShieldAlert, Map as MapIcon, Lock } from 'lucide-react';
+import { Camera, AlertOctagon, Scan, ShieldAlert, Map as MapIcon, Lock, Check, X } from 'lucide-react';
 import { ReportModal } from '../ReportModal';
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
+import toast from 'react-hot-toast';
 
 export function MapTab({ mode }: { mode: UserMode }) {
   const [showReportModal, setShowReportModal] = useState(false);
@@ -24,6 +25,21 @@ export function MapTab({ mode }: { mode: UserMode }) {
 
     return () => unsubscribe();
   }, [mode]);
+
+  const handleVerify = async (reportId: string, isApproved: boolean) => {
+    if (!reportId) return;
+    try {
+      const reportRef = doc(db, 'reports', reportId);
+      await updateDoc(reportRef, {
+        validationStatus: isApproved ? 'verified' : 'rejected',
+        status: isApproved ? 'verified' : 'rejected'
+      });
+      toast.success('검증 처리가 완료되었습니다.');
+    } catch (error) {
+      console.error('Error updating report:', error);
+      toast.error('검증 처리 중 오류가 발생했습니다.');
+    }
+  };
 
   if (mode === 'general') {
     return (
@@ -85,65 +101,78 @@ export function MapTab({ mode }: { mode: UserMode }) {
   }
 
   // Scientist Mode
+  const displayReports = reports.filter(r => r.validationStatus === 'pending' || r.status === 'pending');
+
   return (
     <div className="p-4 space-y-4 animate-in fade-in duration-500 flex flex-col min-h-full relative pb-24">
-      <div className="bg-[#0f172a] rounded-2xl p-5 text-green-400 shadow-xl border border-slate-800 font-mono relative overflow-hidden">
+      <div className="bg-[#0f172a] rounded-2xl p-5 text-green-400 shadow-xl border border-slate-800 font-mono relative overflow-hidden flex flex-col h-full max-h-[80vh]">
         <div className="absolute top-2 right-2 flex gap-1">
           <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
           <div className="text-[8px] text-slate-500">LIVE</div>
         </div>
-        <h2 className="text-xs text-slate-400 mb-4 flex items-center gap-2">
+        <h2 className="text-xs text-slate-400 mb-4 flex items-center gap-2 shrink-0">
           <Scan className="w-4 h-4" />
-          보안 관제 레이더
+          미검증 제보 리스트 관제
         </h2>
         
-        <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-          {reports.length === 0 ? (
-            <div className="text-center py-8 text-slate-500 text-sm">수신된 제보가 없습니다.</div>
+        <div className="space-y-3 overflow-y-auto pr-2 custom-scrollbar flex-1">
+          {displayReports.length === 0 ? (
+            <div className="text-center py-8 text-slate-500 text-sm">대기 중인 제보가 없습니다.</div>
           ) : (
             <AnimatePresence>
-              {reports.map((report) => (
+              {displayReports.map((report) => (
                 <motion.div
                   key={report.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`p-3 rounded-xl border ${
-                    report.validationStatus === 'failed' 
-                      ? 'bg-red-950/30 border-red-900/50 text-red-200' 
-                      : 'bg-slate-900/50 border-slate-800 text-slate-300'
-                  }`}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="p-4 rounded-xl border bg-slate-900/80 border-slate-700 text-slate-300 shadow-lg flex flex-col gap-3"
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-bold text-sm text-white">{report.title}</h3>
-                    <span className="text-[10px] opacity-50">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-bold text-sm text-white">{report.title}</h3>
+                      <p className="text-[10px] text-slate-400 mt-0.5">제보자: {report.userName}</p>
+                    </div>
+                    <span className="text-[10px] opacity-50 whitespace-nowrap ml-2">
                       {new Date(report.createdAt).toLocaleTimeString()}
                     </span>
                   </div>
-                  <div className="flex gap-2 items-start">
-                    {report.photoUrl && (
-                      <div className="w-16 h-16 rounded-lg bg-black/50 border border-white/10 shrink-0 overflow-hidden">
-                        <img src={report.photoUrl} alt="report" className="w-full h-full object-cover opacity-70" />
+                  
+                  <div className="flex gap-3 items-start">
+                    {report.photoUrl ? (
+                      <div className="w-20 h-20 rounded-lg bg-black/50 border border-white/10 shrink-0 overflow-hidden">
+                        <img src={report.photoUrl} alt="report" className="w-full h-full object-cover opacity-90" />
+                      </div>
+                    ) : (
+                      <div className="w-20 h-20 rounded-lg bg-slate-800 flex items-center justify-center shrink-0 border border-slate-700">
+                        <Camera className="w-6 h-6 text-slate-600" />
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs opacity-80 line-clamp-2 mb-2">{report.description}</p>
-                      <div className="flex flex-col gap-1">
-                        {report.validationStatus === 'failed' ? (
-                          <div className="flex items-center gap-1 text-[10px] text-red-400 font-bold bg-red-500/10 px-2 py-1 rounded w-fit">
-                            <AlertOctagon className="w-3 h-3" />
-                            메타데이터 유실 / 위조 의심
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1 text-[10px] text-green-400 font-bold bg-green-500/10 px-2 py-1 rounded w-fit">
-                            <ShieldAlert className="w-3 h-3" />
-                            위치 검증 완료
-                          </div>
-                        )}
-                        <div className="text-[10px] font-mono opacity-50">
-                          {report.deviceLocation?.lat.toFixed(4)}, {report.deviceLocation?.lng.toFixed(4)}
-                        </div>
+                      <p className="text-xs opacity-90 line-clamp-3 leading-relaxed">{report.description}</p>
+                      
+                      <div className="mt-2 text-[10px] font-mono text-slate-500 flex items-center gap-1">
+                        <MapIcon className="w-3 h-3" />
+                        {report.deviceLocation?.lat.toFixed(4)}, {report.deviceLocation?.lng.toFixed(4)}
                       </div>
                     </div>
+                  </div>
+
+                  <div className="flex gap-2 mt-2 pt-3 border-t border-slate-800">
+                    <button
+                      onClick={() => handleVerify(report.id!, true)}
+                      className="flex-1 bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/30 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-colors active:scale-95"
+                    >
+                      <Check className="w-3 h-3" />
+                      승인
+                    </button>
+                    <button
+                      onClick={() => handleVerify(report.id!, false)}
+                      className="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-colors active:scale-95"
+                    >
+                      <X className="w-3 h-3" />
+                      반려
+                    </button>
                   </div>
                 </motion.div>
               ))}

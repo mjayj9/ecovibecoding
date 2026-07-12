@@ -98,7 +98,7 @@ export function MyTab({ mode, user }: { mode: UserMode, user: User }) {
         <button 
           onClick={() => setShowCertificate(true)}
           disabled={!allChecked}
-          className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all duration-300 ${
+          className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all duration-300 mb-3 ${
             allChecked 
               ? 'bg-gradient-to-r from-[#1B4332] to-[#2D6A4F] text-white shadow-lg active:scale-95'
               : 'bg-gray-100 text-gray-400 cursor-not-allowed'
@@ -106,6 +106,13 @@ export function MyTab({ mode, user }: { mode: UserMode, user: User }) {
         >
           <Award className="w-5 h-5" />
           수호 대원 증서 받기
+        </button>
+
+        <button 
+          onClick={() => updateUserData({ role: null })}
+          className="w-full py-3 rounded-xl font-bold text-gray-500 border border-gray-200 bg-gray-50 hover:bg-gray-100 active:scale-95 transition-all flex justify-center items-center gap-2"
+        >
+          역할 변경하기
         </button>
       </div>
 

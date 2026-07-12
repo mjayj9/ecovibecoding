@@ -17,6 +17,7 @@ import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { motion } from 'motion/react';
 import { Leaf, Microscope } from 'lucide-react';
 import { OnboardingTutorial } from './components/OnboardingTutorial';
+import { Toaster } from 'react-hot-toast';
 
 function RoleSelectionScreen() {
   const { updateUserData } = useUser();
@@ -140,6 +141,7 @@ function MainApp() {
 export default function App() {
   return (
     <UserProvider>
+      <Toaster position="top-center" />
       <MainApp />
     </UserProvider>
   );

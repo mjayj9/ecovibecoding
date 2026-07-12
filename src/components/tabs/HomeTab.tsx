@@ -1,10 +1,26 @@
-import { UserMode } from '../../types';
+import { UserMode, Report } from '../../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { Shield, CheckCircle2, XCircle, ChevronRight, Activity, Users, AlertTriangle } from 'lucide-react';
 import { useUser } from '../../hooks/useUser';
+import { useState, useEffect } from 'react';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
 
 export function HomeTab({ mode }: { mode: UserMode }) {
   const { userData, updateUserData } = useUser();
+  const [reports, setReports] = useState<Report[]>([]);
+
+  useEffect(() => {
+    if (mode !== 'scientist') return;
+
+    const q = query(collection(db, 'reports'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Report));
+      setReports(data);
+    });
+
+    return () => unsubscribe();
+  }, [mode]);
 
   const handleQuizAnswer = async (correct: boolean) => {
     if (!userData || userData.quizAnswered !== null) return;
@@ -24,6 +40,10 @@ export function HomeTab({ mode }: { mode: UserMode }) {
   const quizAnswered = userData?.quizAnswered ?? null;
 
   if (mode === 'scientist') {
+    const totalCount = reports.length;
+    const pendingCount = reports.filter(r => r.validationStatus === 'pending' || r.status === 'pending').length;
+    const recentFailedReport = reports.find(r => r.validationStatus === 'failed');
+
     return (
       <div className="p-4 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="bg-[#1A365D] rounded-2xl p-5 text-white shadow-xl relative overflow-hidden">
@@ -34,13 +54,13 @@ export function HomeTab({ mode }: { mode: UserMode }) {
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-white/10 rounded-xl p-3 border border-white/5">
               <Activity className="w-5 h-5 text-blue-300 mb-2" />
-              <div className="text-xs text-blue-200">실시간 스크리닝</div>
-              <div className="text-lg font-bold">142건</div>
+              <div className="text-xs text-blue-200">총 제보 건수</div>
+              <div className="text-lg font-bold">{totalCount}건</div>
             </div>
             <div className="bg-white/10 rounded-xl p-3 border border-white/5">
               <Users className="w-5 h-5 text-blue-300 mb-2" />
-              <div className="text-xs text-blue-200">다층 검증 대기</div>
-              <div className="text-lg font-bold">38건</div>
+              <div className="text-xs text-blue-200">검증 대기 건수</div>
+              <div className="text-lg font-bold">{pendingCount}건</div>
             </div>
           </div>
         </div>
@@ -50,16 +70,26 @@ export function HomeTab({ mode }: { mode: UserMode }) {
             <AlertTriangle className="w-4 h-4 text-[#E67E22]" />
             최근 보안 경고
           </h3>
-          <div className="bg-white rounded-xl p-4 border border-red-100 shadow-sm flex items-start gap-3">
-            <div className="bg-red-50 p-2 rounded-lg shrink-0">
-              <AlertTriangle className="w-5 h-5 text-red-500" />
+          {recentFailedReport ? (
+            <div className="bg-white rounded-xl p-4 border border-red-100 shadow-sm flex items-start gap-3">
+              <div className="bg-red-50 p-2 rounded-lg shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-500" />
+              </div>
+              <div>
+                <div className="text-sm font-bold text-gray-900">메타데이터 원본성 검증 실패</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  제보자 '{recentFailedReport.userName}'님의 '{recentFailedReport.title}' 데이터에서 위치 메타데이터가 유실되거나 위변조되었습니다.
+                </div>
+                <div className="text-[10px] text-gray-400 mt-2">
+                  {new Date(recentFailedReport.createdAt).toLocaleString()}
+                </div>
+              </div>
             </div>
-            <div>
-              <div className="text-sm font-bold text-gray-900">메타데이터 위조 시도 감지</div>
-              <div className="text-xs text-gray-500 mt-1">강원도 화천군 일대, 희귀종 서식지 좌표 변조 의심. 복합 분석 모드로 전환되었습니다.</div>
-              <div className="text-[10px] text-gray-400 mt-2">10분 전</div>
+          ) : (
+            <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm text-center">
+              <p className="text-sm text-gray-500 py-4">현재 감지된 위조 의심 데이터가 없습니다.</p>
             </div>
-          </div>
+          )}
         </div>
       </div>
     );
