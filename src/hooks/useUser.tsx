@@ -9,6 +9,7 @@ export interface UserData {
   pledges: boolean[];
   name: string;
   role?: 'general' | 'scientist';
+  hasSeenTutorial?: boolean;
 }
 
 const defaultUserData: UserData = {

@@ -9,6 +9,9 @@ import { db } from '../../lib/firebase';
 export function MapTab({ mode }: { mode: UserMode }) {
   const [showReportModal, setShowReportModal] = useState(false);
   const [reports, setReports] = useState<Report[]>([]);
+  const [showTooltip, setShowTooltip] = useState(() => {
+    return localStorage.getItem('hasSeenReportTooltip') !== 'true';
+  });
 
   useEffect(() => {
     if (mode !== 'scientist') return;
@@ -39,13 +42,40 @@ export function MapTab({ mode }: { mode: UserMode }) {
           </div>
         </div>
 
-        <button 
-          onClick={() => setShowReportModal(true)}
-          className="w-full bg-[#2D6A4F] text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform"
-        >
-          <Camera className="w-5 h-5" />
-          주변 생물 제보하기
-        </button>
+        <div className="relative mt-4">
+          <AnimatePresence>
+            {showTooltip && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="absolute -top-14 left-1/2 -translate-x-1/2 bg-[#E67E22] text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg flex items-center whitespace-nowrap z-10"
+              >
+                <motion.div 
+                  animate={{ scale: [1, 1.05, 1] }} 
+                  transition={{ repeat: Infinity, duration: 1.5 }}
+                  className="flex items-center gap-1"
+                >
+                  👋 첫 생물 제보를 시작해보세요!
+                </motion.div>
+                <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#E67E22] rotate-45" />
+              </motion.div>
+            )}
+          </AnimatePresence>
+          <button 
+            onClick={() => {
+              if (showTooltip) {
+                setShowTooltip(false);
+                localStorage.setItem('hasSeenReportTooltip', 'true');
+              }
+              setShowReportModal(true);
+            }}
+            className="w-full bg-[#2D6A4F] text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform"
+          >
+            <Camera className="w-5 h-5" />
+            주변 생물 제보하기
+          </button>
+        </div>
 
         {showReportModal && (
           <ReportModal onClose={() => setShowReportModal(false)} />

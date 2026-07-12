@@ -16,6 +16,7 @@ import { auth } from './lib/firebase';
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { motion } from 'motion/react';
 import { Leaf, Microscope } from 'lucide-react';
+import { OnboardingTutorial } from './components/OnboardingTutorial';
 
 function RoleSelectionScreen() {
   const { updateUserData } = useUser();
@@ -112,6 +113,10 @@ function MainApp() {
 
   if (user && userData && !userData.role) {
     return <RoleSelectionScreen />;
+  }
+
+  if (user && userData && userData.role && !userData.hasSeenTutorial) {
+    return <OnboardingTutorial />;
   }
 
   const mode = userData?.role || 'general';

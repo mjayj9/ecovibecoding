@@ -201,6 +201,9 @@ export function ReportModal({ onClose }: ReportModalProps) {
                       )}
                     </div>
                   </div>
+                  <p className="text-[10px] text-gray-500 leading-relaxed mt-1">
+                    💡 팁: 카메라 앱으로 직접 촬영한 사진을 올리면 GPS 메타데이터가 정확하게 인식됩니다. 카카오톡 등으로 다운로드한 사진은 위치 정보가 유실될 수 있습니다.
+                  </p>
                   
                   {photoFile && (
                     <div className="mt-2 text-xs font-bold p-2 rounded-lg bg-gray-50">
@@ -221,7 +224,7 @@ export function ReportModal({ onClose }: ReportModalProps) {
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="예: 수달, 청둥오리 등"
+                    placeholder="예: 길고양이, 청둥오리, 수달 (모르면 '모름'이라고 적어주세요)"
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2D6A4F] focus:border-transparent transition-all"
                     required
                   />
@@ -232,7 +235,7 @@ export function ReportModal({ onClose }: ReportModalProps) {
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="어떤 생물을 발견하셨나요? 특징을 자세히 적어주세요."
+                    placeholder="발견 당시의 상황이나 생물의 상태를 간단히 적어주세요. (예: 다리를 절고 있어요, 혼자 있어요)"
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2D6A4F] focus:border-transparent transition-all resize-none h-28"
                     required
                   />
