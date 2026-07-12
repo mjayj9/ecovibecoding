@@ -1,10 +1,11 @@
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, MapPin, Loader2, CheckCircle2 } from 'lucide-react';
+import { X, MapPin, Loader2, CheckCircle2, Image as ImageIcon } from 'lucide-react';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useUser } from '../hooks/useUser';
 import { Location } from '../types';
+import exifr from 'exifr';
 
 interface ReportModalProps {
   onClose: () => void;
@@ -19,6 +20,12 @@ export function ReportModal({ onClose }: ReportModalProps) {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [exifLocation, setExifLocation] = useState<Location | null>(null);
+  const [validationStatus, setValidationStatus] = useState<'passed' | 'failed' | 'pending'>('pending');
+  const [loadingExif, setLoadingExif] = useState(false);
 
   useEffect(() => {
     if (!navigator.geolocation) {
@@ -44,9 +51,39 @@ export function ReportModal({ onClose }: ReportModalProps) {
     );
   }, []);
 
+  const handlePhotoChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setPhotoFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setPhotoUrl(ev.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    setLoadingExif(true);
+    try {
+      const gps = await exifr.gps(file);
+      if (gps && gps.latitude && gps.longitude) {
+        setExifLocation({ lat: gps.latitude, lng: gps.longitude });
+        setValidationStatus('passed');
+      } else {
+        setExifLocation(null);
+        setValidationStatus('failed');
+      }
+    } catch (err) {
+      console.error('EXIF extraction error:', err);
+      setExifLocation(null);
+      setValidationStatus('failed');
+    } finally {
+      setLoadingExif(false);
+    }
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!user || !location || !title.trim() || !description.trim()) return;
+    if (!user || !location || !title.trim() || !description.trim() || !photoUrl) return;
 
     setSubmitting(true);
     try {
@@ -54,8 +91,11 @@ export function ReportModal({ onClose }: ReportModalProps) {
         userId: user.uid,
         userName: userData?.name || user.displayName || '익명 대원',
         title,
-        location,
         description,
+        photoUrl,
+        exifLocation,
+        deviceLocation: location,
+        validationStatus,
         createdAt: Date.now(),
         status: 'pending'
       });
@@ -140,6 +180,42 @@ export function ReportModal({ onClose }: ReportModalProps) {
                 </div>
 
                 <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500">사진 첨부 (필수)</label>
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handlePhotoChange}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                      required
+                    />
+                    <div className={`w-full h-32 rounded-xl flex flex-col items-center justify-center gap-2 border-2 border-dashed ${photoUrl ? 'border-transparent overflow-hidden p-0' : 'border-gray-300 bg-gray-50'} transition-all`}>
+                      {photoUrl ? (
+                        <img src={photoUrl} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <>
+                          <ImageIcon className="w-8 h-8 text-gray-400" />
+                          <span className="text-xs text-gray-500">사진 촬영 또는 업로드</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {photoFile && (
+                    <div className="mt-2 text-xs font-bold p-2 rounded-lg bg-gray-50">
+                      {loadingExif ? (
+                        <span className="text-blue-500 flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin"/> EXIF 데이터 분석 중...</span>
+                      ) : validationStatus === 'passed' ? (
+                        <span className="text-green-600">✅ 1차 검증 통과: 사진 위치 정보가 확인되었습니다.</span>
+                      ) : (
+                        <span className="text-red-500">❌ 1차 검증 실패: 사진에 위치 메타데이터가 없습니다. 제보 신뢰도가 하락합니다.</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-1">
                   <label className="text-xs font-bold text-gray-500">생물명</label>
                   <input
                     type="text"
@@ -164,7 +240,7 @@ export function ReportModal({ onClose }: ReportModalProps) {
 
                 <button
                   type="submit"
-                  disabled={submitting || loadingLocation || !location || !title.trim() || !description.trim()}
+                  disabled={submitting || loadingLocation || !location || !title.trim() || !description.trim() || !photoUrl}
                   className="w-full bg-[#2D6A4F] text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : '제보하기'}

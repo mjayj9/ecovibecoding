@@ -19,8 +19,11 @@ export interface Report {
   userId: string;
   userName: string;
   title: string;
-  location: Location;
   description: string;
+  photoUrl?: string;
+  exifLocation: Location | null;
+  deviceLocation: Location;
+  validationStatus: 'passed' | 'failed' | 'pending';
   createdAt: number;
   status: 'pending' | 'verified' | 'rejected';
 }

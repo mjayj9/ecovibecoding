@@ -8,6 +8,7 @@ export interface UserData {
   quizAnswered: boolean | null;
   pledges: boolean[];
   name: string;
+  role?: 'general' | 'scientist';
 }
 
 const defaultUserData: UserData = {
