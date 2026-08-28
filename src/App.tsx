@@ -18,7 +18,7 @@ import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { motion } from 'motion/react';
 import { Leaf, Microscope } from 'lucide-react';
 import { OnboardingTutorial } from './components/OnboardingTutorial';
-import { Toaster } from 'react-hot-toast';
+import { Toaster, toast } from 'react-hot-toast';
 
 function RoleSelectionScreen() {
   const { updateUserData } = useUser();
@@ -80,14 +80,31 @@ function RoleSelectionScreen() {
 function MainApp() {
   const [activeTab, setActiveTab] = useState<Tab>('home');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { user, userData, loading } = useUser();
 
   const handleLogin = async () => {
+    if (isLoggingIn) return;
+    setIsLoggingIn(true);
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error', error);
+      const code = error?.code || '';
+      if (code === 'auth/popup-closed-by-user') {
+        toast.error('로그인 팝업이 닫혔습니다. 다시 시도해 주세요.');
+      } else if (code === 'auth/unauthorized-domain') {
+        toast.error('승인되지 않은 도메인입니다. Firebase 콘솔에서 현재 도메인을 추가해 주세요.');
+      } else if (code === 'auth/operation-not-allowed') {
+        toast.error('Google 로그인 기능이 비활성화되어 있습니다. Firebase 콘솔을 확인해 주세요.');
+      } else if (code === 'auth/popup-blocked') {
+        toast.error('브라우저의 팝업 차단을 해제해 주세요.');
+      } else {
+        toast.error(`로그인 실패: ${error?.message || '알 수 없는 에러가 발생했습니다.'}`);
+      }
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -106,9 +123,17 @@ function MainApp() {
         <p className="text-[#1A365D] mb-8 text-sm">Join the mission to protect our ecosystem.</p>
         <button
           onClick={handleLogin}
-          className="bg-[#2D6A4F] text-white px-8 py-3 rounded-xl font-medium shadow-lg active:scale-95 transition-transform"
+          disabled={isLoggingIn}
+          className="bg-[#2D6A4F] text-white px-8 py-3 rounded-xl font-medium shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
         >
-          Sign in with Google
+          {isLoggingIn ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              구글 계정으로 로그인 중...
+            </>
+          ) : (
+            'Sign in with Google'
+          )}
         </button>
       </div>
     );
